@@ -9,6 +9,10 @@ import Foundation
 import Firebase
 import FirebaseFirestoreSwift
 
+protocol AuthenticationFormProtocol {
+    var formIsVaild: Bool {get}
+}
+
 @MainActor
 class AuthViewModel: ObservableObject {
     @Published var userSession: FirebaseAuth.User?
@@ -22,7 +26,15 @@ class AuthViewModel: ObservableObject {
     }
     
     func signIN(withEmail email: String, password: String) async throws {
-        print("Sign In")
+        do {
+            let result = try await Auth.auth().signIn(withEmail: email, password: password)
+            self.userSession = result.user
+            //
+            await fetchUser()
+        } catch {
+            print("Debug: Failed to create a user with error \(error.localizedDescription)")
+        }
+        
     }
     
     func createUser (withEmail email: String, password: String, fullname: String ) async throws {
@@ -41,7 +53,13 @@ class AuthViewModel: ObservableObject {
     }
     
     func signOut() {
-        
+        do {
+            try Auth.auth().signOut() // signout on backend
+            self.userSession = nil    // wipes out user session and direct to login page
+            self.currentUser = nil    // current data model wiped
+        } catch {
+            print("Error: Sign out error \(error.localizedDescription)")
+        }
     }
     
     func deleteAccount() {
@@ -55,4 +73,6 @@ class AuthViewModel: ObservableObject {
         
     }
 }
+
+
 
